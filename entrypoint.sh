@@ -24,12 +24,15 @@ caps="$cap_prefix$(seq -s ",$cap_prefix" 0 $(cat /proc/sys/kernel/cap_last_cap))
 # TODO: check mode
 if [ "$MODE" = "json-rpc" ]
 then
-/usr/bin/jsonrpc2-helper
+/usr/bin/jsonrpc2-helper  
 service supervisor start
 supervisorctl start all
 fi
 
 export HOST_IP=$(hostname -I | awk '{print $1}')
+ls -altr /usr/bin
+
+file  /usr/bin/signal-cli-rest-api
 
 # Start API as signal-api user
-exec setpriv --reuid=${SIGNAL_CLI_UID} --regid=${SIGNAL_CLI_GID} --init-groups --inh-caps=$caps signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR}
+exec setpriv --reuid=${SIGNAL_CLI_UID} --regid=${SIGNAL_CLI_GID} --init-groups --inh-caps=$caps /usr/bin/signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR}

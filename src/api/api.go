@@ -497,13 +497,13 @@ func (a *Api) Receive(c *gin.Context) {
 
 		ignoreAttachments := c.DefaultQuery("ignore_attachments", "false")
 		if ignoreAttachments != "true" && ignoreAttachments != "false" {
-			c.JSON(400, Error {Msg: "Couldn't process request - ignore_attachments parameter needs to be either 'true' or 'false'"})
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_attachments parameter needs to be either 'true' or 'false'"})
 			return
 		}
 
 		ignoreStories := c.DefaultQuery("ignore_stories", "false")
 		if ignoreStories != "true" && ignoreStories != "false" {
-			c.JSON(400, Error {Msg: "Couldn't process request - ignore_stories parameter needs to be either 'true' or 'false'"})
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_stories parameter needs to be either 'true' or 'false'"})
 			return
 		}
 
@@ -513,7 +513,7 @@ func (a *Api) Receive(c *gin.Context) {
 			return
 		}
 
-		c.String(200, jsonStr)
+		c.JSON(200, jsonStr)
 	}
 }
 
@@ -574,6 +574,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [post]
 func (a *Api) AddMembersToGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -618,6 +619,7 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Groupd ID"
 // @Router /v1/groups/{number}/{groupid}/members [delete]
 func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -662,6 +664,7 @@ func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Groupd ID"
 // @Router /v1/groups/{number}/{groupid}/admins [post]
 func (a *Api) AddAdminsToGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -706,6 +709,7 @@ func (a *Api) AddAdminsToGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Groupd ID"
 // @Router /v1/groups/{number}/{groupid}/admins [delete]
 func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -1227,6 +1231,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
 // @Param data body Reaction true "Reaction"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
@@ -1275,6 +1280,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
 // @Param data body Reaction true "Reaction"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
@@ -1387,29 +1393,29 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
 // @Router /v1/search [get]
-func (a *Api) SearchForNumbers(c *gin.Context) {
-	query := c.Request.URL.Query()
-	if _, ok := query["numbers"]; !ok {
-		c.JSON(400, Error{Msg: "Please provide numbers to query for"})
-		return
-	}
+// func (a *Api) SearchForNumbers(c *gin.Context) {
+// 	query := c.Request.URL.Query()
+// 	if _, ok := query["numbers"]; !ok {
+// 		c.JSON(400, Error{Msg: "Please provide numbers to query for"})
+// 		return
+// 	}
 
-	number := c.Param("number")
+// 	number := c.Param("number")
 
-	searchResults, err := a.signalClient.SearchForNumbers(number, query["numbers"])
-	if err != nil {
-		c.JSON(400, Error{Msg: err.Error()})
-		return
-	}
+// 	searchResults, err := a.signalClient.SearchForNumbers(number, query["numbers"])
+// 	if err != nil {
+// 		c.JSON(400, Error{Msg: err.Error()})
+// 		return
+// 	}
 
-	searchResponse := []SearchResponse{}
-	for _, val := range searchResults {
-		entry := SearchResponse{Number: val.Number, Registered: val.Registered}
-		searchResponse = append(searchResponse, entry)
-	}
+// 	searchResponse := []SearchResponse{}
+// 	for _, val := range searchResults {
+// 		entry := SearchResponse{Number: val.Number, Registered: val.Registered}
+// 		searchResponse = append(searchResponse, entry)
+// 	}
 
-	c.JSON(200, searchResponse)
-}
+// 	c.JSON(200, searchResponse)
+// }
 
 // @Summary Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
 // @Tags Contacts
@@ -1420,7 +1426,7 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 // @Success 204
 // @Param data body UpdateContactRequest true "Contact"
 // @Failure 400 {object} Error
-// @Router /v1/contacts{number} [put]
+// @Router /v1/contacts/{number} [put]
 func (a *Api) UpdateContact(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {
@@ -1446,6 +1452,35 @@ func (a *Api) UpdateContact(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+// @Tags Contacts
+// @Description Updates the info associated to a number on the contact list.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 200 {object} []client.Contact
+// @Failure 400 {object} Error
+// @Router /v1/contacts/{number} [get]
+func (a *Api) GetContacts(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	contacts, err := a.signalClient.GetContacts(number)
+
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	var cl []client.Contact
+	json.Unmarshal([]byte(contacts), &cl)
+
+	c.JSON(200, cl)
 }
 
 // @Summary Links another device to this device.

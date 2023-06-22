@@ -19,6 +19,7 @@ ARG BUILD_VERSION_ARG
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
 
 COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+COPY ./zscaler_root_ca.cer /tmp/zscaler_root_ca.cer
 
 # use architecture specific libsignal_jni.so
 RUN arch="$(uname -m)"; \
@@ -36,16 +37,18 @@ RUN dpkg-reconfigure debconf --frontend=noninteractive \
 		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
+RUN echo "y" | keytool -import -v -trustcacerts -alias server-alias -file /tmp/zscaler_root_ca.cer -keystore cacerts.jks -keypass changeit -storepass changeit
+
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
 
-ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
+ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork -Dmaven.wagon.http.ssl.insecure=true"
 
 ENV LANG en_US.UTF-8
 
 RUN cd /tmp/ \
-	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \	
+	&& git -c http.sslVerify=false clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \	
 	&& cd swag-${SWAG_VERSION} \
 	&& git checkout -q v${SWAG_VERSION} \
 	&& make -s < /dev/null > /dev/null \
@@ -77,8 +80,10 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
 		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
+		&& echo "installing graalvm" \
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
-		&& ./gradlew -q nativeCompile; \
+		&& echo "building from source"\
+		&& ./gradlew -q nativeCompile -Dmaven.wagon.http.ssl.insecure=true; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
 		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \

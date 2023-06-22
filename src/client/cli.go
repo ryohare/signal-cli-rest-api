@@ -1,24 +1,25 @@
 package client
 
 import (
-	"strings"
+	"bufio"
+	"bytes"
 	"errors"
 	"os/exec"
-	"bytes"
+	"strings"
 	"time"
-	"bufio"
-	log "github.com/sirupsen/logrus"
+
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type CliClient struct {
-	signalCliMode            SignalCliMode
-	signalCliApiConfig       *utils.SignalCliApiConfig
+	signalCliMode      SignalCliMode
+	signalCliApiConfig *utils.SignalCliApiConfig
 }
 
 func NewCliClient(signalCliMode SignalCliMode, signalCliApiConfig *utils.SignalCliApiConfig) *CliClient {
-	return &CliClient {
-		signalCliMode: signalCliMode,
+	return &CliClient{
+		signalCliMode:      signalCliMode,
 		signalCliApiConfig: signalCliApiConfig,
 	}
 }
@@ -39,13 +40,17 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 	} else if s.signalCliMode == Native {
 		signalCliBinary = "signal-cli-native"
 	} else {
-		return "", errors.New("Invalid signal-cli mode")
+		// return "", errors.New("Invalid signal-cli mode")
+		signalCliBinary = s.signalCliApiConfig.GetCliBinaryPath()
+		if signalCliBinary == "" {
+			signalCliBinary = "signal-cli"
+		}
 	}
 
 	//check if args contain number
 	trustModeStr := ""
 	for i, arg := range args {
-		if (arg == "-a" || arg == "--account") && (((i+1) < len(args)) && (utils.IsPhoneNumber(args[i+1]))) {
+		if (arg == "-a" || arg == "--account") && (((i + 1) < len(args)) && (utils.IsPhoneNumber(args[i+1]))) {
 			number := args[i+1]
 			trustMode, err := s.signalCliApiConfig.GetTrustModeForNumber(number)
 			if err == nil {
@@ -122,4 +127,3 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		return string(line), nil
 	}
 }
-

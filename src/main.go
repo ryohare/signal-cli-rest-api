@@ -3,6 +3,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -12,11 +20,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
 )
+
+var signalClient *client.SignalClient
 
 // @title Signal Cli REST API
 // @version 1.0
@@ -51,7 +57,8 @@ import (
 
 // @BasePath /
 func main() {
-	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
+	homedir, _ := os.UserHomeDir()
+	signalCliConfig := flag.String("signal-cli-config", fmt.Sprintf("%s/.local/share/signal-cli/", homedir), "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
@@ -129,7 +136,7 @@ func main() {
 
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
-	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath)
+	signalClient = client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath)
 	err = signalClient.Init()
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
@@ -232,15 +239,16 @@ func main() {
 			reactions.DELETE(":number", api.RemoveReaction)
 		}
 
-		search := v1.Group("/search")
-		{
-			search.GET("", api.SearchForNumbers)
-			search.GET(":number", api.SearchForNumbers)
-		}
+		// search := v1.Group("/search")
+		// {
+		// 	search.GET("", api.SearchForNumbers)
+		// 	search.GET(":number", api.SearchForNumbers)
+		// }
 
 		contacts := v1.Group("/contacts")
 		{
 			contacts.PUT(":number", api.UpdateContact)
+			contacts.GET(":number", api.GetContacts)
 		}
 	}
 
@@ -336,6 +344,28 @@ func main() {
 		}))
 		c.Start()
 	}
-
+	setupOSSignalHandler()
 	router.Run()
+}
+
+func setupOSSignalHandler() {
+
+	// Create a channel to receive signals
+	signalChan := make(chan os.Signal, 1)
+
+	// Notify the channel on receiving specified signals
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+
+	// Start a goroutine to handle signals
+	go func() {
+		// Wait for a signal
+		sig := <-signalChan
+		log.Println("Received signal:", sig)
+
+		signalClient.SaveAppConfig()
+
+		// Exit the program gracefully
+		os.Exit(0)
+	}()
+
 }

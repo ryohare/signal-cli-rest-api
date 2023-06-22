@@ -4,7 +4,6 @@
         "description": "This is the Signal Cli REST API documentation.",
         "title": "Signal Cli REST API",
         "contact": {},
-        "license": {},
         "version": "1.0"
     },
     "basePath": "/",
@@ -225,7 +224,9 @@
                     }
                 ],
                 "responses": {
-                    "200": {},
+                    "200": {
+                        "description": "OK"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -265,7 +266,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -275,7 +278,46 @@
                 }
             }
         },
-        "/v1/contacts{number}": {
+        "/v1/contacts/{number}": {
+            "get": {
+                "description": "Updates the info associated to a number on the contact list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.Contact"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Updates the info associated to a number on the contact list.",
                 "consumes": [
@@ -307,7 +349,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -349,7 +393,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -562,6 +608,13 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Groupd ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -605,6 +658,13 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Groupd ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }
@@ -744,6 +804,13 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -787,6 +854,13 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Groupd ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }
@@ -1043,6 +1117,13 @@
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Reaction",
                         "name": "data",
                         "in": "body",
@@ -1080,6 +1161,13 @@
                 ],
                 "summary": "Remove a reaction.",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "Reaction",
                         "name": "data",
@@ -1196,7 +1284,9 @@
                     }
                 ],
                 "responses": {
-                    "201": {},
+                    "201": {
+                        "description": "Created"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1248,57 +1338,6 @@
                         "description": "OK",
                         "schema": {
                             "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/search": {
-            "get": {
-                "description": "Check if one or more phone numbers are registered with the Signal Service.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Search"
-                ],
-                "summary": "Check if one or more phone numbers are registered with the Signal Service.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Registered Phone Number",
-                        "name": "number",
-                        "in": "path"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "multi",
-                        "description": "Numbers to check",
-                        "name": "numbers",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.SearchResponse"
-                            }
                         }
                     },
                     "400": {
@@ -1474,7 +1513,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1560,7 +1601,6 @@
             "type": "object",
             "properties": {
                 "logging": {
-                    "type": "object",
                     "$ref": "#/definitions/api.LoggingConfiguration"
                 }
             }
@@ -1589,7 +1629,6 @@
                     "type": "string"
                 },
                 "permissions": {
-                    "type": "object",
                     "$ref": "#/definitions/api.GroupPermissions"
                 }
             }
@@ -1661,17 +1700,6 @@
                     "type": "string"
                 },
                 "use_voice": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "api.SearchResponse": {
-            "type": "object",
-            "properties": {
-                "number": {
-                    "type": "string"
-                },
-                "registered": {
                     "type": "boolean"
                 }
             }
@@ -1868,6 +1896,55 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "client.Contact": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "isBlocked": {
+                    "type": "boolean"
+                },
+                "messageExpirationTime": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "object",
+                    "properties": {
+                        "about": {
+                            "type": "string"
+                        },
+                        "aboutEmoji": {
+                            "type": "string"
+                        },
+                        "familyName": {
+                            "type": "string"
+                        },
+                        "givenName": {
+                            "type": "string"
+                        },
+                        "lastUpdateTimestamp": {
+                            "type": "integer"
+                        },
+                        "mobileCoinAddress": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },

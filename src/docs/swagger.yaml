@@ -23,7 +23,6 @@ definitions:
     properties:
       logging:
         $ref: '#/definitions/api.LoggingConfiguration'
-        type: object
     type: object
   api.CreateGroupRequest:
     properties:
@@ -43,7 +42,6 @@ definitions:
         type: string
       permissions:
         $ref: '#/definitions/api.GroupPermissions'
-        type: object
     type: object
   api.CreateGroupResponse:
     properties:
@@ -91,13 +89,6 @@ definitions:
       use_voice:
         type: boolean
     type: object
-  api.SearchResponse:
-    properties:
-      number:
-        type: string
-      registered:
-        type: boolean
-    type: object
   api.SendMessageResponse:
     properties:
       timestamp:
@@ -106,7 +97,9 @@ definitions:
   api.SendMessageV1:
     properties:
       base64_attachment:
-        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'''
+        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED
+          DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED
+          DATA>'''
         type: string
       is_group:
         type: boolean
@@ -226,6 +219,38 @@ definitions:
           type: string
         type: array
     type: object
+  client.Contact:
+    properties:
+      color:
+        type: string
+      isBlocked:
+        type: boolean
+      messageExpirationTime:
+        type: integer
+      name:
+        type: string
+      number:
+        type: string
+      profile:
+        properties:
+          about:
+            type: string
+          aboutEmoji:
+            type: string
+          familyName:
+            type: string
+          givenName:
+            type: string
+          lastUpdateTimestamp:
+            type: integer
+          mobileCoinAddress:
+            type: string
+        type: object
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
   client.GroupEntry:
     properties:
       admins:
@@ -280,7 +305,6 @@ definitions:
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
-  license: {}
   title: Signal Cli REST API
   version: "1.0"
 paths:
@@ -425,7 +449,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200": {}
+        "200":
+          description: OK
         "400":
           description: Bad Request
           schema:
@@ -452,7 +477,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -460,7 +486,34 @@ paths:
       summary: Set account specific settings.
       tags:
       - General
-  /v1/contacts{number}:
+  /v1/contacts/{number}:
+    get:
+      consumes:
+      - application/json
+      description: Updates the info associated to a number on the contact list.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/client.Contact'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Updates the info associated to a number on the contact list. If the
+        contact doesn’t exist yet, it will be added.
+      tags:
+      - Contacts
     put:
       consumes:
       - application/json
@@ -480,19 +533,22 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/api.Error'
-      summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+      summary: Updates the info associated to a number on the contact list. If the
+        contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
   /v1/devices/{number}:
     post:
       consumes:
       - application/json
-      description: Links another device to this device. Only works, if this is the master device.
+      description: Links another device to this device. Only works, if this is the
+        master device.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -508,7 +564,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -649,6 +706,11 @@ paths:
         name: number
         required: true
         type: string
+      - description: Groupd ID
+        in: path
+        name: groupid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -677,6 +739,11 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
+        type: string
+      - description: Groupd ID
+        in: path
+        name: groupid
         required: true
         type: string
       produces:
@@ -770,6 +837,11 @@ paths:
         name: number
         required: true
         type: string
+      - description: Groupd ID
+        in: path
+        name: groupid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -798,6 +870,11 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
         required: true
         type: string
       produces:
@@ -880,7 +957,8 @@ paths:
       - Identities
   /v1/identities/{number}/trust/{numberToTrust}:
     put:
-      description: Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**
+      description: Trust an identity. When 'trust_all_known_keys' is set to' true',
+        all known keys of this user are trusted. **This is only recommended for testing.**
       parameters:
       - description: Input Data
         in: body
@@ -966,6 +1044,11 @@ paths:
       - application/json
       description: Remove a reaction
       parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
       - description: Reaction
         in: body
         name: data
@@ -991,6 +1074,11 @@ paths:
       - application/json
       description: React to a message
       parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
       - description: Reaction
         in: body
         name: data
@@ -1015,7 +1103,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
+      description: Receives Signal Messages from the Signal Network. If you are running
+        the docker container in normal/native mode, this is a GET endpoint. In json-rpc
+        mode this is a websocket endpoint.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1026,7 +1116,8 @@ paths:
         in: query
         name: timeout
         type: string
-      - description: Specify whether the attachments of the received message should be ignored
+      - description: Specify whether the attachments of the received message should
+          be ignored
         in: query
         name: ignore_attachments
         type: string
@@ -1069,7 +1160,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201": {}
+        "201":
+          description: Created
         "400":
           description: Bad Request
           schema:
@@ -1112,40 +1204,6 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/search:
-    get:
-      consumes:
-      - application/json
-      description: Check if one or more phone numbers are registered with the Signal Service.
-      parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        type: string
-      - collectionFormat: multi
-        description: Numbers to check
-        in: query
-        items:
-          type: string
-        name: numbers
-        required: true
-        type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.SearchResponse'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.Error'
-      summary: Check if one or more phone numbers are registered with the Signal Service.
-      tags:
-      - Search
   /v1/send:
     post:
       consumes:
@@ -1238,7 +1296,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.
+      description: Disables push support for this device. **WARNING:** If *delete_account*
+        is set to *true*, the account will be deleted from the Signal Server. This
+        cannot be undone without loss.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1253,7 +1313,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:

@@ -85,6 +85,24 @@ type IdentityEntry struct {
 	SafetyNumber string `json:"safety_number"`
 }
 
+type Contact struct {
+	Number                string `json:"number"`
+	UUID                  string `json:"uuid"`
+	Username              string `json:"username"`
+	Name                  string `json:"name"`
+	Color                 string `json:"color"`
+	IsBlocked             bool   `json:"isBlocked"`
+	MessageExpirationTime int    `json:"messageExpirationTime"`
+	Profile               struct {
+		LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
+		GivenName           string `json:"givenName"`
+		FamilyName          string `json:"familyName"`
+		About               string `json:"about"`
+		AboutEmoji          string `json:"aboutEmoji"`
+		MobileCoinAddress   string `json:"mobileCoinAddress"`
+	} `json:"profile"`
+}
+
 type SignalCliGroupMember struct {
 	Number string `json:"number"`
 	Uuid   string `json:"uuid"`
@@ -259,6 +277,7 @@ func (s *SignalClient) GetSignalCliMode() SignalCliMode {
 }
 
 func (s *SignalClient) Init() error {
+
 	s.signalCliApiConfig = utils.NewSignalCliApiConfig()
 	err := s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
 	if err != nil {
@@ -282,9 +301,9 @@ func (s *SignalClient) Init() error {
 
 			go s.jsonRpc2Clients[number].ReceiveData(number) //receive messages in goroutine
 		}
-	} else {
-		s.cliClient = NewCliClient(s.signalCliMode, s.signalCliApiConfig)
 	}
+
+	s.cliClient = NewCliClient(s.signalCliMode, s.signalCliApiConfig)
 
 	return nil
 }
@@ -459,12 +478,12 @@ func (s *SignalClient) send(number string, message string,
 
 func (s *SignalClient) About() About {
 	about := About{
-        SupportedApiVersions: []string{"v1", "v2"},
-        BuildNr: 2,
-        Mode: getSignalCliModeString(s.signalCliMode),
-		Version: utils.GetEnv("BUILD_VERSION", "unset"),
-		Capabilities: map[string][]string{"v2/send": []string{"quotes", "mentions"}},
-    }
+		SupportedApiVersions: []string{"v1", "v2"},
+		BuildNr:              2,
+		Mode:                 getSignalCliModeString(s.signalCliMode),
+		Version:              utils.GetEnv("BUILD_VERSION", "unset"),
+		Capabilities:         map[string][]string{"v2/send": []string{"quotes", "mentions"}},
+	}
 	return about
 }
 
@@ -532,6 +551,11 @@ func (s *SignalClient) SendV1(number string, message string, recipients []string
 }
 
 func (s *SignalClient) getJsonRpc2Client(number string) (*JsonRpc2Client, error) {
+
+	val := s.jsonRpc2Clients[number]
+
+	fmt.Println(val)
+
 	if val, ok := s.jsonRpc2Clients[number]; ok {
 		return val, nil
 	}
@@ -916,9 +940,9 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 }
 
 func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
-	if s.signalCliMode == JsonRpc {
-		return []byte{}, errors.New(endpointNotSupportedInJsonRpcMode)
-	}
+	// if s.signalCliMode == JsonRpc {
+	// 	return []byte{}, errors.New(endpointNotSupportedInJsonRpcMode)
+	// }
 	command := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
 
 	tsdeviceLink, err := s.cliClient.Execute(false, command, "")
@@ -1439,6 +1463,25 @@ func (s *SignalClient) UpdateContact(number string, recipient string, name *stri
 	return err
 }
 
+func (s *SignalClient) GetContacts(number string) (string, error) {
+	if s.signalCliMode == JsonRpc {
+
+		jrpc, err := s.getJsonRpc2Client(number)
+
+		if err != nil {
+			return "", err
+		}
+
+		res, err := jrpc.getRaw("listContacts", nil)
+		if err != nil {
+			return "", err
+		}
+		return res, nil
+	} else {
+		return "", fmt.Errorf("not implemented")
+	}
+}
+
 func (s *SignalClient) AddDevice(number string, uri string) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
@@ -1456,6 +1499,10 @@ func (s *SignalClient) AddDevice(number string, uri string) error {
 		_, err = s.cliClient.Execute(true, cmd, "")
 	}
 	return err
+}
+
+func (s *SignalClient) SaveAppConfig() error {
+	return s.signalCliApiConfig.Persist()
 }
 
 func (s *SignalClient) SetTrustMode(number string, trustMode utils.SignalCliTrustMode) error {
